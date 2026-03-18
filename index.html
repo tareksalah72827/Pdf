@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>مستخرج PDF | Uniral Ai</title>
+  <!-- PDF-Lib -->
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <!-- Font Awesome 6 (مجاني) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    /* reset شامل */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: #f5f9ff;  /* خلفية ناعمة جداً */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      position: relative;
+      overflow-x: hidden;
+      direction: rtl;
+    }
+
+    /* تأثير خلفية سائلة هادئة بألوان الباستيل */
+    body::before {
+      content: '';
+      position: fixed;
+      width: 200%;
+      height: 200%;
+      top: -50%;
+      left: -50%;
+      background: radial-gradient(circle at 30% 40%, #d4e4ff 0%, transparent 35%),
+                  radial-gradient(circle at 80% 70%, #ffe6f0 0%, transparent 45%),
+                  radial-gradient(circle at 20% 80%, #e0f7fa 0%, transparent 50%);
+      filter: blur(60px);
+      animation: softLiquid 20s infinite alternate ease-in-out;
+      z-index: 0;
+      opacity: 0.5;
+    }
+
+    @keyframes softLiquid {
+      0% { transform: scale(1) rotate(-3deg); opacity: 0.4; }
+      100% { transform: scale(1.2) rotate(5deg); opacity: 0.7; }
+    }
+
+    /* حاوية التطبيق الرئيسية - زجاج فاتح هادئ */
+    .app-container {
+      position: relative;
+      z-index: 30;
+      width: 100%;
+      max-width: 400px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(40px) saturate(180%);
+      -webkit-backdrop-filter: blur(40px) saturate(180%);
+      border-radius: 48px;
+      border: 1.5px solid rgba(255, 255, 255, 0.8);
+      box-shadow: 0 25px 50px -10px rgba(100, 120, 150, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+      padding: 28px 20px 20px;
+      color: #2c3e50;
+      overflow: hidden;
+    }
+
+    /* شريط الحالة العلوي */
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 8px 20px;
+      color: #5a6b7b;
+      font-size: 1rem;
+      font-weight: 500;
+    }
+    .time {
+      background: rgba(200, 220, 240, 0.4);
+      padding: 4px 16px;
+      border-radius: 40px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+    }
+
+    /* الهيدر مع أيقونة التطبيق */
+    .app-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+      padding: 0 6px;
+    }
+    .app-icon {
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 30px;
+      width: 70px;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1.5px solid white;
+      box-shadow: 0 10px 15px -5px rgba(0, 50, 70, 0.2);
+    }
+    .app-icon i {
+      font-size: 3.2rem;
+      color: #3f6b8f;
+      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.05));
+    }
+    .app-title h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: #1f3a4b;
+    }
+    .app-title p {
+      font-size: 0.9rem;
+      opacity: 0.7;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+      color: #4a5f70;
+    }
+
+    /* بطاقة رفع الملف */
+    .upload-card {
+      background: rgba(255, 255, 255, 0.4);
+      border-radius: 38px;
+      padding: 18px 18px 22px;
+      margin-bottom: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 20px -5px rgba(0, 20, 30, 0.1);
+    }
+
+    .upload-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 32px;
+      border: 2px dashed rgba(120, 150, 180, 0.5);
+      padding: 32px 16px;
+      cursor: pointer;
+      transition: 0.2s;
+      margin-bottom: 16px;
+    }
+    .upload-area:hover {
+      background: rgba(255, 255, 255, 0.7);
+      border-color: #7f9fb5;
+    }
+    .upload-area i {
+      font-size: 3.5rem;
+      color: #5b7f9b;
+      margin-bottom: 10px;
+    }
+    .upload-area span {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #1f3a4b;
+    }
+    .upload-area small {
+      font-size: 1rem;
+      opacity: 0.6;
+      color: #2e4b5e;
+    }
+    #pdfInput {
+      display: none;
+    }
+
+    /* تفاصيل الملف */
+    .file-details {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 34px;
+      padding: 14px 20px;
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(5px);
+    }
+    .file-icon {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .file-icon i {
+      font-size: 1.8rem;
+      color: #4f6f87;
+    }
+    .file-icon .file-name {
+      font-weight: 600;
+      font-size: 1.1rem;
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #1d3a4a;
+    }
+    .page-count {
+      background: rgba(180, 205, 230, 0.5);
+      border-radius: 40px;
+      padding: 8px 18px;
+      font-weight: 700;
+      border: 1px solid white;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      color: #1f3a4b;
+    }
+
+    /* حقل إدخال الصفحات */
+    .range-section {
+      margin: 28px 0 25px;
+    }
+    .range-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding: 0 8px;
+      font-weight: 600;
+      font-size: 1.2rem;
+      color: #2c4a5e;
+    }
+    .range-box {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+    .page-input-wrapper {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 40px;
+      border: 1.5px solid rgba(255, 255, 255, 0.8);
+      padding: 8px 0;
+      backdrop-filter: blur(5px);
+      box-shadow: 0 5px 10px rgba(0, 0, 0, 0.02);
+    }
+    .page-input-wrapper label {
+      display: block;
+      text-align: center;
+      font-size: 0.9rem;
+      opacity: 0.6;
+      margin-top: 5px;
+      color: #2b4b60;
+    }
+    .page-input-wrapper input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      text-align: center;
+      font-size: 2.4rem;
+      font-weight: 700;
+      color: #1f3f53;
+      outline: none;
+      padding: 0 5px;
+    }
+    .page-input-wrapper input[type=number]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .range-sep i {
+      font-size: 2rem;
+      color: #7f9eb5;
+      opacity: 0.5;
+    }
+
+    /* زر الاستخراج */
+    .extract-btn {
+      background: linear-gradient(135deg, #c0d9f0, #b0cce7);
+      border: none;
+      border-radius: 50px;
+      padding: 24px 20px;
+      width: 100%;
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #1f3b4c;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 15px 25px -5px #a0b9d0, 0 0 0 1.5px white inset;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      cursor: pointer;
+      transition: 0.15s;
+      border: 1px solid white;
+      margin: 8px 0 18px;
+    }
+    .extract-btn:active {
+      transform: scale(0.97);
+      background: linear-gradient(135deg, #b0cae3, #a0bcdb);
+      box-shadow: 0 5px 15px #b0c8dd;
+    }
+    .extract-btn:disabled {
+      opacity: 0.4;
+      pointer-events: none;
+      filter: grayscale(30%);
+    }
+
+    /* منطقة رابط التحميل */
+    .download-area {
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 44px;
+      padding: 20px;
+      margin: 18px 0 12px;
+      border: 1px solid white;
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .download-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .download-info i {
+      font-size: 2.2rem;
+      color: #3f6f8f;
+    }
+    .download-info span {
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: #1f3c4f;
+    }
+    .download-link {
+      background: #ffffffcc;
+      border-radius: 40px;
+      padding: 14px 24px;
+      color: #1f3c4f;
+      font-weight: 700;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+      border: 1px solid white;
+      transition: 0.15s;
+    }
+    .download-link:active {
+      transform: scale(0.94);
+      background: white;
+    }
+    .hidden {
+      display: none !important;
+    }
+
+    /* رسائل الحالة */
+    .status-message {
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 50px;
+      padding: 16px 20px;
+      margin: 12px 0 15px;
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 500;
+      backdrop-filter: blur(6px);
+      border: 1px solid white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: #1f3a4b;
+    }
+
+    /* تذييل الحقوق */
+    .app-footer {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-top: 18px;
+      padding-top: 15px;
+      border-top: 1px solid rgba(255,255,255,0.6);
+      color: #3b5c72;
+      font-size: 0.95rem;
+    }
+    .app-footer i {
+      font-size: 1rem;
+      opacity: 0.6;
+      color: #4f708b;
+    }
+    .app-footer .credits {
+      font-weight: 500;
+      color: #1e3c50;
+    }
+
+    /* تحسينات للمس */
+    button, .upload-area, .download-link {
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- شريط حالة علوي -->
+    <div class="status-bar">
+      <i class="fas fa-signal"></i>
+      <span class="time">9:41</span>
+      <i class="fas fa-battery-three-quarters"></i>
+    </div>
+
+    <!-- الهيدر -->
+    <div class="app-header">
+      <div class="app-icon">
+        <i class="fas fa-file-pdf"></i>
+      </div>
+      <div class="app-title">
+        <h1>مستخرج PDF</h1>
+        <p><i class="fas fa-droplet"></i> زجاج سائل هادئ · خصوصية تامة</p>
+      </div>
+    </div>
+
+    <!-- بطاقة رفع الملف -->
+    <div class="upload-card">
+      <div class="upload-area" id="uploadArea">
+        <i class="fas fa-cloud-upload-alt"></i>
+        <span id="uploadBtnText">اختر ملف PDF</span>
+        <small>اضغط للتصفح</small>
+        <input type="file" id="pdfInput" accept=".pdf" />
+      </div>
+
+      <div class="file-details" id="fileDetails">
+        <div class="file-icon">
+          <i class="fas fa-file-pdf"></i>
+          <span class="file-name" id="fileNameDisplay">لم يتم اختيار ملف</span>
+        </div>
+        <div class="page-count" id="pageCountDisplay">
+          <i class="fas fa-copy"></i>
+          <span id="pageCountValue">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- نطاق الصفحات -->
+    <div class="range-section">
+      <div class="range-label">
+        <span><i class="fas fa-arrow-left"></i> الأولى</span>
+        <span><i class="fas fa-arrow-right"></i> الأخيرة</span>
+      </div>
+      <div class="range-box">
+        <div class="page-input-wrapper">
+          <input type="number" id="firstPage" min="1" value="1" placeholder="1">
+          <label>من</label>
+        </div>
+        <div class="range-sep"><i class="fas fa-ellipsis-h"></i></div>
+        <div class="page-input-wrapper">
+          <input type="number" id="lastPage" min="1" value="1" placeholder="1">
+          <label>إلى</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- زر الاستخراج -->
+    <button class="extract-btn" id="extractBtn" disabled>
+      <i class="fas fa-cut"></i>
+      <span>استخرج</span>
+      <i class="fas fa-download"></i>
+    </button>
+
+    <!-- رابط التحميل المباشر (يظهر بعد الاستخراج) -->
+    <div id="downloadContainer" class="download-area hidden">
+      <div class="download-info">
+        <i class="fas fa-file-export"></i>
+        <span>الملف جاهز</span>
+      </div>
+      <a href="#" id="downloadLink" class="download-link" download>
+        <i class="fas fa-download"></i> تحميل
+      </a>
+    </div>
+
+    <!-- رسائل الحالة -->
+    <div class="status-message" id="statusMsg">
+      <i class="fas fa-hand-pointer" id="statusIcon"></i>
+      <span id="statusText">اختر ملف PDF للبدء</span>
+    </div>
+
+    <!-- تذييل الحقوق (Tariq / Uniral Ai) -->
+    <div class="app-footer">
+      <i class="fas fa-copyright"></i>
+      <span class="credits">Tariq</span>
+      <i class="fas fa-code"></i>
+      <span>Uniral Ai</span>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const { PDFDocument } = PDFLib;
+
+      // عناصر DOM
+      const pdfInput = document.getElementById('pdfInput');
+      const uploadArea = document.getElementById('uploadArea');
+      const uploadBtnText = document.getElementById('uploadBtnText');
+      const fileNameDisplay = document.getElementById('fileNameDisplay');
+      const pageCountValue = document.getElementById('pageCountValue');
+      const firstPageInput = document.getElementById('firstPage');
+      const lastPageInput = document.getElementById('lastPage');
+      const extractBtn = document.getElementById('extractBtn');
+      const downloadContainer = document.getElementById('downloadContainer');
+      const downloadLink = document.getElementById('downloadLink');
+      const statusIcon = document.getElementById('statusIcon');
+      const statusText = document.getElementById('statusText');
+
+      // متغيرات الحالة
+      let sourcePdfDoc = null;
+      let totalPages = 0;
+      let currentFileName = '';
+      let lastExtractedBlobUrl = null;
+
+      function setStatus(message, icon = 'fa-hand-pointer', isError = false) {
+        statusText.innerText = message;
+        statusIcon.className = `fas ${icon}`;
+        statusIcon.style.color = isError ? '#c95a5a' : '';
+      }
+
+      function showDownloadLink(blobUrl, fileName) {
+        if (blobUrl) {
+          downloadLink.href = blobUrl;
+          downloadLink.download = fileName;
+          downloadContainer.classList.remove('hidden');
+        } else {
+          downloadContainer.classList.add('hidden');
+        }
+      }
+
+      function revokeLastUrl() {
+        if (lastExtractedBlobUrl) {
+          URL.revokeObjectURL(lastExtractedBlobUrl);
+          lastExtractedBlobUrl = null;
+        }
+      }
+
+      function refreshUiAfterLoad() {
+        if (sourcePdfDoc && totalPages > 0) {
+          firstPageInput.max = totalPages;
+          lastPageInput.max = totalPages;
+
+          let firstVal = parseInt(firstPageInput.value);
+          let lastVal = parseInt(lastPageInput.value);
+
+          if (isNaN(firstVal) || firstVal < 1) firstPageInput.value = 1;
+          if (isNaN(lastVal) || lastVal < 1) lastPageInput.value = totalPages;
+          if (parseInt(firstPageInput.value) > totalPages) firstPageInput.value = totalPages;
+          if (parseInt(lastPageInput.value) > totalPages) lastPageInput.value = totalPages;
+
+          extractBtn.disabled = false;
+          setStatus('الملف جاهز، حدد الصفحات', 'fa-check-circle');
+        } else {
+          extractBtn.disabled = true;
+        }
+      }
+
+      pdfInput.addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (!file) {
+          sourcePdfDoc = null;
+          totalPages = 0;
+          fileNameDisplay.innerText = 'لم يتم اختيار ملف';
+          pageCountValue.innerText = '0';
+          uploadBtnText.innerHTML = 'اختر ملف PDF';
+          extractBtn.disabled = true;
+          showDownloadLink(null);
+          setStatus('اختر ملف PDF للبدء', 'fa-hand-pointer');
+          return;
+        }
+
+        currentFileName = file.name;
+        fileNameDisplay.innerText = currentFileName.length > 25 ? currentFileName.substring(0,22)+'…' : currentFileName;
+        uploadBtnText.innerHTML = 'تغيير الملف';
+        setStatus('جاري تحميل PDF...', 'fa-spinner fa-pulse');
+        showDownloadLink(null);
+        revokeLastUrl();
+
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const pdfDoc = await PDFDocument.load(arrayBuffer, {
+            ignoreEncryption: true,
+            throwOnInvalidObject: false,
+          });
+
+          const pagesCount = pdfDoc.getPageCount();
+          sourcePdfDoc = pdfDoc;
+          totalPages = pagesCount;
+          pageCountValue.innerText = pagesCount;
+
+          refreshUiAfterLoad();
+        } catch (error) {
+          console.error('خطأ في قراءة PDF:', error);
+          sourcePdfDoc = null;
+          totalPages = 0;
+          fileNameDisplay.innerText = 'فشل التحميل';
+          pageCountValue.innerText = '0';
+          extractBtn.disabled = true;
+          setStatus('الملف غير مدعوم أو تالف', 'fa-exclamation-triangle', true);
+        }
+      });
+
+      uploadArea.addEventListener('click', () => pdfInput.click());
+
+      function getValidatedRange() {
+        if (!sourcePdfDoc || totalPages === 0) {
+          setStatus('الرجاء اختيار ملف PDF أولاً', 'fa-exclamation-circle', true);
+          return null;
+        }
+
+        const firstRaw = firstPageInput.value.trim();
+        const lastRaw = lastPageInput.value.trim();
+
+        if (firstRaw === '' || lastRaw === '') {
+          setStatus('أدخل رقم الصفحة الأولى والأخيرة', 'fa-exclamation-circle', true);
+          return null;
+        }
+
+        const first = Number(firstRaw);
+        const last = Number(lastRaw);
+
+        if (!Number.isInteger(first) || !Number.isInteger(last) || first < 1 || last < 1) {
+          setStatus('الأرقام يجب أن تكون أعداداً صحيحة موجبة', 'fa-exclamation-circle', true);
+          return null;
+        }
+
+        if (first > totalPages || last > totalPages) {
+          setStatus(`النطاق يتجاوز عدد الصفحات (${totalPages})`, 'fa-exclamation-circle', true);
+          return null;
+        }
+
+        if (first > last) {
+          setStatus('الصفحة الأولى أكبر من الأخيرة', 'fa-exclamation-circle', true);
+          return null;
+        }
+
+        return { first, last };
+      }
+
+      extractBtn.addEventListener('click', async function() {
+        const range = getValidatedRange();
+        if (!range) return;
+
+        const { first, last } = range;
+
+        try {
+          extractBtn.disabled = true;
+          setStatus('جاري استخراج الصفحات...', 'fa-spinner fa-pulse');
+          showDownloadLink(null);
+          revokeLastUrl();
+
+          const newPdf = await PDFDocument.create();
+          const indices = [];
+          for (let i = first; i <= last; i++) indices.push(i - 1);
+
+          const copiedPages = await newPdf.copyPages(sourcePdfDoc, indices);
+          copiedPages.forEach(page => newPdf.addPage(page));
+
+          const pdfBytes = await newPdf.save();
+          const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+          const url = URL.createObjectURL(blob);
+          lastExtractedBlobUrl = url;
+
+          const baseName = currentFileName.replace('.pdf', '') || 'مستخرج';
+          const downloadName = `${baseName}_صفحات_${first}_الى_${last}.pdf`;
+
+          showDownloadLink(url, downloadName);
+
+          // تحميل تلقائي
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = downloadName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+
+          setStatus(`تم تجهيز الصفحات ${first}-${last}`, 'fa-circle-check');
+        } catch (error) {
+          console.error('فشل الاستخراج:', error);
+          setStatus('حدث خطأ أثناء الاستخراج', 'fa-bug', true);
+        } finally {
+          if (sourcePdfDoc && totalPages > 0) {
+            extractBtn.disabled = false;
+          }
+        }
+      });
+
+      firstPageInput.addEventListener('blur', function() {
+        if (!sourcePdfDoc || totalPages === 0) return;
+        let val = parseInt(firstPageInput.value);
+        if (isNaN(val) || val < 1) firstPageInput.value = 1;
+        else if (val > totalPages) firstPageInput.value = totalPages;
+      });
+
+      lastPageInput.addEventListener('blur', function() {
+        if (!sourcePdfDoc || totalPages === 0) return;
+        let val = parseInt(lastPageInput.value);
+        if (isNaN(val) || val < 1) lastPageInput.value = totalPages;
+        else if (val > totalPages) lastPageInput.value = totalPages;
+      });
+
+      extractBtn.disabled = true;
+
+      window.addEventListener('beforeunload', function() {
+        revokeLastUrl();
+      });
+    })();
+  </script>
+</body>
+</html>
