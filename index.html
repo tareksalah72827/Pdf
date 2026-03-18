@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>أداة استخراج PDF - Uniral Ai</title>
+  <!-- PDF-Lib -->
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    }
+
+    body {
+      background: #eef2f6;  /* خلفية هادئة */
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    /* تصميم البطاقة الرئيسية */
+    .card {
+      max-width: 550px;
+      width: 100%;
+      background: rgba(255,255,255,0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 36px;
+      box-shadow: 0 25px 50px -12px rgba(0, 30, 40, 0.25);
+      border: 1px solid rgba(255,255,255,0.7);
+      padding: 2rem 2rem 2.2rem;
+      transition: all 0.2s;
+    }
+
+    /* رأس التطبيق */
+    .app-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .logo {
+      background: linear-gradient(135deg, #cad8ed, #d7e3f5);
+      width: 60px;
+      height: 60px;
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 12px 20px -10px #b0c4db;
+    }
+
+    .logo i {
+      font-size: 2.5rem;
+      color: #1d3a5c;
+    }
+
+    .header-text h1 {
+      font-size: 1.9rem;
+      font-weight: 600;
+      color: #1c3b4f;
+      line-height: 1.2;
+    }
+
+    .header-text p {
+      color: #3d5e72;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    /* منطقة رفع الملف */
+    .upload-box {
+      background: rgba(255,255,255,0.5);
+      border-radius: 28px;
+      padding: 2rem 1.5rem;
+      border: 2px dashed #b6ccdf;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: 0.2s;
+      margin-bottom: 1.5rem;
+    }
+
+    .upload-box:hover {
+      background: rgba(255,255,255,0.7);
+      border-color: #7f9fbb;
+    }
+
+    .upload-box i {
+      font-size: 3.5rem;
+      color: #3b6e8f;
+      margin-bottom: 0.8rem;
+    }
+
+    .upload-box .main-text {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #1f3d50;
+    }
+
+    .upload-box .sub-text {
+      color: #416e87;
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    /* تفاصيل الملف */
+    .file-info {
+      background: rgba(255,255,255,0.7);
+      border-radius: 26px;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.8rem;
+      border: 1px solid white;
+    }
+
+    .file-detail {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    .file-detail i {
+      font-size: 1.8rem;
+      color: #1f4b64;
+    }
+
+    .file-detail .file-name {
+      font-weight: 600;
+      color: #153c4f;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 200px;
+    }
+
+    .page-badge {
+      background: #d2e2f0;
+      border-radius: 40px;
+      padding: 0.5rem 1.2rem;
+      font-weight: 600;
+      color: #153c4f;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid white;
+    }
+
+    /* حقول إدخال الصفحات */
+    .range-container {
+      margin: 1.8rem 0 2rem;
+    }
+
+    .range-labels {
+      display: flex;
+      justify-content: space-between;
+      padding: 0 0.5rem;
+      margin-bottom: 0.8rem;
+      color: #1c4b63;
+      font-weight: 600;
+    }
+
+    .range-inputs {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .page-field {
+      flex: 1;
+      background: rgba(255,255,255,0.6);
+      border-radius: 28px;
+      border: 1.5px solid #d2e3f0;
+      padding: 0.8rem 0;
+    }
+
+    .page-field label {
+      display: block;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #326480;
+    }
+
+    .page-field input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      text-align: center;
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #0f3142;
+      outline: none;
+    }
+
+    .page-field input[type=number]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .range-sep {
+      font-size: 2rem;
+      color: #7f9ab5;
+    }
+
+    /* زر الاستخراج الرئيسي */
+    .extract-btn {
+      background: #c4d9ed;
+      border: none;
+      border-radius: 40px;
+      padding: 1.5rem 1.8rem;
+      width: 100%;
+      font-size: 2rem;
+      font-weight: 600;
+      color: #12384d;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.2rem;
+      box-shadow: 0 15px 25px -8px #a3bed8;
+      border: 1px solid white;
+      cursor: pointer;
+      transition: 0.15s;
+      margin-bottom: 1.5rem;
+    }
+
+    .extract-btn:active {
+      transform: scale(0.98);
+      background: #b7cde2;
+    }
+
+    .extract-btn:disabled {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    /* شريط الأدوات السفلي (تحميل + مشاركة) */
+    .action-bar {
+      display: flex;
+      gap: 1rem;
+      align-items: stretch;
+      margin: 1.8rem 0 1.2rem;
+    }
+
+    .action-btn {
+      flex: 1;
+      background: rgba(255,255,255,0.7);
+      border-radius: 34px;
+      padding: 1rem;
+      border: 1px solid white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.8rem;
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #1b4057;
+      cursor: pointer;
+      transition: 0.15s;
+      text-decoration: none;
+    }
+
+    .action-btn:active {
+      background: rgba(255,255,255,0.9);
+      transform: scale(0.97);
+    }
+
+    .action-btn i {
+      font-size: 1.6rem;
+    }
+
+    .action-btn:disabled {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    /* رسائل الحالة */
+    .status {
+      background: rgba(255,255,255,0.5);
+      border-radius: 40px;
+      padding: 1rem 1.5rem;
+      margin: 1rem 0 0;
+      text-align: center;
+      color: #1a4a62;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.7rem;
+    }
+
+    /* حقوق النشر */
+    .footer {
+      margin-top: 2rem;
+      text-align: center;
+      color: #3b6077;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.7rem;
+      border-top: 1px solid #d0e0ee;
+      padding-top: 1.5rem;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <!-- رأس بسيط -->
+    <div class="app-header">
+      <div class="logo">
+        <i class="fas fa-file-pdf"></i>
+      </div>
+      <div class="header-text">
+        <h1>مستخرج PDF</h1>
+        <p><i class="fas fa-droplet"></i> زجاج سائل · خصوصية كاملة</p>
+      </div>
+    </div>
+
+    <!-- رفع الملف -->
+    <div class="upload-box" id="uploadBox">
+      <i class="fas fa-cloud-upload-alt"></i>
+      <span class="main-text" id="uploadMainText">اختر ملف PDF</span>
+      <span class="sub-text" id="uploadSubText">أو اسحب الملف وأفلته هنا</span>
+      <input type="file" id="fileInput" accept=".pdf">
+    </div>
+
+    <!-- معلومات الملف (تظهر عند اختيار ملف) -->
+    <div class="file-info" id="fileInfo">
+      <div class="file-detail">
+        <i class="fas fa-file-pdf"></i>
+        <span class="file-name" id="fileName">لم يتم اختيار ملف</span>
+      </div>
+      <div class="page-badge" id="pageBadge">
+        <i class="fas fa-copy"></i>
+        <span id="pageCount">0</span>
+      </div>
+    </div>
+
+    <!-- إدخال نطاق الصفحات -->
+    <div class="range-container">
+      <div class="range-labels">
+        <span><i class="fas fa-arrow-left"></i> الصفحة الأولى</span>
+        <span>الصفحة الأخيرة <i class="fas fa-arrow-right"></i></span>
+      </div>
+      <div class="range-inputs">
+        <div class="page-field">
+          <label>من</label>
+          <input type="number" id="firstPage" min="1" value="1">
+        </div>
+        <div class="range-sep"><i class="fas fa-minus"></i></div>
+        <div class="page-field">
+          <label>إلى</label>
+          <input type="number" id="lastPage" min="1" value="1">
+        </div>
+      </div>
+    </div>
+
+    <!-- زر الاستخراج -->
+    <button class="extract-btn" id="extractBtn" disabled>
+      <i class="fas fa-cut"></i>
+      <span>استخرج الصفحات</span>
+      <i class="fas fa-download"></i>
+    </button>
+
+    <!-- شريط الأدوات: تحميل + مشاركة (يظهران بعد الاستخراج) -->
+    <div class="action-bar hidden" id="actionBar">
+      <a href="#" class="action-btn" id="downloadBtn" download>
+        <i class="fas fa-download"></i>
+        <span>تحميل</span>
+      </a>
+      <button class="action-btn" id="shareBtn">
+        <i class="fas fa-share-alt"></i>
+        <span>مشاركة</span>
+      </button>
+    </div>
+
+    <!-- رسالة الحالة -->
+    <div class="status" id="statusMsg">
+      <i class="fas fa-info-circle" id="statusIcon"></i>
+      <span id="statusText">اختر ملف PDF للبدء</span>
+    </div>
+
+    <!-- التوقيع -->
+    <div class="footer">
+      <i class="fas fa-copyright"></i>
+      <span>Tariq</span>
+      <i class="fas fa-code"></i>
+      <span>Uniral Ai</span>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const { PDFDocument } = PDFLib;
+
+      // عناصر DOM
+      const fileInput = document.getElementById('fileInput');
+      const uploadBox = document.getElementById('uploadBox');
+      const uploadMainText = document.getElementById('uploadMainText');
+      const fileInfo = document.getElementById('fileInfo');
+      const fileNameSpan = document.getElementById('fileName');
+      const pageCountSpan = document.getElementById('pageCount');
+      const firstPageInput = document.getElementById('firstPage');
+      const lastPageInput = document.getElementById('lastPage');
+      const extractBtn = document.getElementById('extractBtn');
+      const actionBar = document.getElementById('actionBar');
+      const downloadBtn = document.getElementById('downloadBtn');
+      const shareBtn = document.getElementById('shareBtn');
+      const statusIcon = document.getElementById('statusIcon');
+      const statusText = document.getElementById('statusText');
+
+      // متغيرات الحالة
+      let sourcePdfDoc = null;
+      let totalPages = 0;
+      let currentFileName = '';
+      let currentBlobUrl = null;    // رابط التحميل الحالي
+      let currentBlobFile = null;    // ملف blob للمشاركة
+
+      // دالة تحديث الحالة
+      function setStatus(message, icon = 'fa-info-circle', isError = false) {
+        statusText.innerText = message;
+        statusIcon.className = `fas ${icon}`;
+        statusIcon.style.color = isError ? '#b34a4a' : '';
+      }
+
+      // إظهار/إخفاء شريط الأدوات
+      function setActionBarVisible(visible, blobUrl = null, blobFile = null) {
+        if (visible && blobUrl) {
+          actionBar.classList.remove('hidden');
+          downloadBtn.href = blobUrl;
+          // سيتم تعيين اسم الملف لاحقاً عند الضغط على تحميل (لأنه قد يتغير)
+          // نحتاج إلى حفظ اسم الملف المناسب
+          currentBlobUrl = blobUrl;
+          currentBlobFile = blobFile; // للمشاركة
+        } else {
+          actionBar.classList.add('hidden');
+          if (currentBlobUrl) {
+            URL.revokeObjectURL(currentBlobUrl);
+            currentBlobUrl = null;
+            currentBlobFile = null;
+          }
+        }
+      }
+
+      // تنظيف الرابط السابق
+      function revokeUrl() {
+        if (currentBlobUrl) {
+          URL.revokeObjectURL(currentBlobUrl);
+          currentBlobUrl = null;
+        }
+      }
+
+      // تحميل ملف PDF
+      async function loadPdf(file) {
+        if (!file) return;
+        currentFileName = file.name;
+        fileNameSpan.innerText = currentFileName.length > 30 ? currentFileName.substring(0,27)+'…' : currentFileName;
+        uploadMainText.innerText = 'تغيير الملف';
+        setStatus('جاري تحميل الملف...', 'fa-spinner fa-pulse');
+
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const pdfDoc = await PDFDocument.load(arrayBuffer, {
+            ignoreEncryption: true,
+            throwOnInvalidObject: false,
+          });
+          sourcePdfDoc = pdfDoc;
+          totalPages = pdfDoc.getPageCount();
+          pageCountSpan.innerText = totalPages;
+
+          // ضبط حدود الإدخال
+          firstPageInput.max = totalPages;
+          lastPageInput.max = totalPages;
+          lastPageInput.value = totalPages;
+
+          extractBtn.disabled = false;
+          setStatus('الملف جاهز، حدد الصفحات', 'fa-check-circle');
+          setActionBarVisible(false); // إخفاء شريط الأدوات عند تحميل ملف جديد
+        } catch (error) {
+          console.error(error);
+          sourcePdfDoc = null;
+          totalPages = 0;
+          pageCountSpan.innerText = '0';
+          fileNameSpan.innerText = 'فشل التحميل';
+          extractBtn.disabled = true;
+          setStatus('الملف غير صالح', 'fa-exclamation-triangle', true);
+        }
+      }
+
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) loadPdf(file);
+      });
+
+      uploadBox.addEventListener('click', () => fileInput.click());
+
+      // التحقق من صحة الإدخال
+      function getValidRange() {
+        if (!sourcePdfDoc || totalPages === 0) {
+          setStatus('الرجاء اختيار ملف PDF أولاً', 'fa-exclamation-circle', true);
+          return null;
+        }
+        const first = parseInt(firstPageInput.value);
+        const last = parseInt(lastPageInput.value);
+        if (isNaN(first) || isNaN(last) || first < 1 || last < 1) {
+          setStatus('أدخل أرقام صفحات صحيحة', 'fa-exclamation-circle', true);
+          return null;
+        }
+        if (first > totalPages || last > totalPages) {
+          setStatus(`النطاق يتجاوز عدد الصفحات (${totalPages})`, 'fa-exclamation-circle', true);
+          return null;
+        }
+        if (first > last) {
+          setStatus('الصفحة الأولى أكبر من الأخيرة', 'fa-exclamation-circle', true);
+          return null;
+        }
+        return { first, last };
+      }
+
+      // معالجة حدث الاستخراج
+      extractBtn.addEventListener('click', async () => {
+        const range = getValidRange();
+        if (!range) return;
+
+        const { first, last } = range;
+
+        try {
+          extractBtn.disabled = true;
+          setStatus('جاري استخراج الصفحات...', 'fa-spinner fa-pulse');
+          setActionBarVisible(false);
+          revokeUrl();
+
+          // إنشاء PDF جديد
+          const newPdf = await PDFDocument.create();
+          const indices = [];
+          for (let i = first; i <= last; i++) indices.push(i - 1);
+          const copiedPages = await newPdf.copyPages(sourcePdfDoc, indices);
+          copiedPages.forEach(page => newPdf.addPage(page));
+
+          const pdfBytes = await newPdf.save();
+          // إنشاء ملف blob
+          const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+          const url = URL.createObjectURL(blob);
+          const baseName = currentFileName.replace('.pdf', '') || 'مستخرج';
+          const downloadName = `${baseName}_صفحات_${first}_الى_${last}.pdf`;
+
+          // إظهار شريط الأدوات
+          setActionBarVisible(true, url, blob);
+
+          // تعيين اسم التحميل لرابط التحميل
+          downloadBtn.download = downloadName;
+
+          // إعداد زر المشاركة
+          shareBtn.onclick = async () => {
+            // محاولة استخدام Web Share API لمشاركة الملف
+            if (navigator.canShare && navigator.canShare({ files: [new File([blob], downloadName, { type: 'application/pdf' })] })) {
+              try {
+                await navigator.share({
+                  title: 'ملف PDF',
+                  text: `الصفحات ${first} إلى ${last}`,
+                  files: [new File([blob], downloadName, { type: 'application/pdf' })],
+                });
+                setStatus('تمت المشاركة بنجاح', 'fa-check-circle');
+              } catch (err) {
+                if (err.name !== 'AbortError') {
+                  setStatus('فشلت المشاركة، يمكنك نسخ الرابط', 'fa-exclamation-circle', true);
+                }
+              }
+            } else {
+              // إذا لم يدعم المتصفح مشاركة الملفات، ننسخ رابط التحميل إلى الحافظة
+              try {
+                await navigator.clipboard.writeText(downloadBtn.href);
+                setStatus('تم نسخ رابط التحميل', 'fa-clipboard-check');
+              } catch {
+                setStatus('المتصفح لا يدعم المشاركة أو النسخ', 'fa-exclamation-circle', true);
+              }
+            }
+          };
+
+          setStatus(`تم استخراج الصفحات ${first}-${last} بنجاح`, 'fa-check-circle');
+        } catch (error) {
+          console.error(error);
+          setStatus('حدث خطأ أثناء الاستخراج', 'fa-bug', true);
+        } finally {
+          if (sourcePdfDoc && totalPages > 0) {
+            extractBtn.disabled = false;
+          }
+        }
+      });
+
+      // التحقق من حدود الإدخال عند فقدان التركيز
+      firstPageInput.addEventListener('blur', () => {
+        if (!sourcePdfDoc) return;
+        let val = parseInt(firstPageInput.value);
+        if (isNaN(val) || val < 1) firstPageInput.value = 1;
+        else if (val > totalPages) firstPageInput.value = totalPages;
+      });
+
+      lastPageInput.addEventListener('blur', () => {
+        if (!sourcePdfDoc) return;
+        let val = parseInt(lastPageInput.value);
+        if (isNaN(val) || val < 1) lastPageInput.value = totalPages;
+        else if (val > totalPages) lastPageInput.value = totalPages;
+      });
+
+      // تعطيل الزر مبدئياً
+      extractBtn.disabled = true;
+      setActionBarVisible(false);
+
+      // تنظيف عند الخروج
+      window.addEventListener('beforeunload', () => revokeUrl());
+    })();
+  </script>
+</body>
+</html>
